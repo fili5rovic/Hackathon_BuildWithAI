@@ -32,7 +32,7 @@ public class GeminiService {
     public GeminiService(
             RestTemplateBuilder restTemplateBuilder,
             @Value("${gemini.api.url}") String apiUrl
-            ) {
+    ) {
         ClassPathResource resource = new ClassPathResource("apiKey");
         String apiKey = null;
         try {
@@ -51,6 +51,17 @@ public class GeminiService {
             log.warn("Please set 'gemini.api.key'. Calls will likely fail.");
             log.warn("------------------------------------------------------");
         }
+    }
+
+
+    public String getPrePrompt() {
+        ClassPathResource resource = new ClassPathResource("hateSpeechPrompt.txt");
+        try {
+            return Files.readString(resource.getFile().toPath());
+        } catch (IOException e) {
+            System.err.println("Error reading file: " + e.getMessage());
+        }
+        return "";
     }
 
     public String callGeminiApi(String promptText) {

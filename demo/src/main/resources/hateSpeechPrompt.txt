@@ -13,7 +13,7 @@ The input will be a block of text extracted from a webpage.
 4.  Each string in the array must be an **exact quote** of the hate speech segment found in the input text.
 5.  If no hate speech is detected in the input text, return a JSON object with an empty array: `{[]}`.
 6.  **Crucially:** Do **not** include any introductory phrases, explanations, apologies, summaries, or any text whatsoever outside the JSON object itself. Your entire output must strictly adhere to the specified JSON format.
-7.
+7. You should only look for hate speech in Serbian language and ignore other languages.
 **Example Input Text:**
 ```
 This is a sample text. Some people post awful things like 'All [group X] are inherently bad!' or use terms like '[offensive slur Y]'. It's important to filter this. Another example: '[derogatory phrase Z]'.
@@ -34,4 +34,3 @@ This is a sample text. Some people post awful things like 'All [group X] are inh
 
 **Now, analyze the following text content and provide the required JSON output:**
 
-[Paste the webpage text content here]

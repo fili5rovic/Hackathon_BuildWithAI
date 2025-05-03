@@ -25,20 +25,13 @@ public class GeminiController {
 
     @GetMapping("/ask-default")
     public String askDefault() {
-        ClassPathResource resource = new ClassPathResource("hateSpeechPrompt.txt");
-        String prePrompt = null;
-        try {
-            prePrompt = Files.readString(resource.getFile().toPath());
-        } catch (IOException e) {
-            System.err.println("Error reading file: " + e.getMessage());
-        }
-        String defaultPrompt = prePrompt + "Jednom rečju ,,teška ciganija \" i nikad više arapske zemlje jer oni su drugi svet ,zasto sebe i porodicu stavljati u rizik kad imamo bar kolko tolko civilizovanije zemlje gde možete letovati bez rizika da vam otmu dete i napastvuju ženu ili devojku.Slučaja ima previše.Trebe pritisnuti agencije pravno i priupitati šta oni to nude.";
+        String defaultPrompt = geminiService.getPrePrompt() + "Jednom rečju ,,teška ciganija \" i nikad više arapske zemlje jer oni su drugi svet ,zasto sebe i porodicu stavljati u rizik kad imamo bar kolko tolko civilizovanije zemlje gde možete letovati bez rizika da vam otmu dete i napastvuju ženu ili devojku.Slučaja ima previše.Trebe pritisnuti agencije pravno i priupitati šta oni to nude.";
         return geminiService.callGeminiApi(defaultPrompt);
     }
 
     @GetMapping("/ask")
     public String askWithQueryParam(@RequestParam String prompt) {
-        return geminiService.callGeminiApi(prompt);
+        return geminiService.callGeminiApi(geminiService.getPrePrompt() + prompt);
     }
 
     @PostMapping("/ask-body")

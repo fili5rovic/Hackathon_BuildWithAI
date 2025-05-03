@@ -1,12 +1,16 @@
 package hackathon.controller;
 
 import hackathon.gemini.GeminiService;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.io.IOException;
+import java.nio.file.Files;
 
 
 @RestController
@@ -21,7 +25,14 @@ public class GeminiController {
 
     @GetMapping("/ask-default")
     public String askDefault() {
-        String defaultPrompt = "Explain how AI works";
+        ClassPathResource resource = new ClassPathResource("hateSpeechPrompt.txt");
+        String prePrompt = null;
+        try {
+            prePrompt = Files.readString(resource.getFile().toPath());
+        } catch (IOException e) {
+            System.err.println("Error reading file: " + e.getMessage());
+        }
+        String defaultPrompt = prePrompt + "Jednom rečju ,,teška ciganija \" i nikad više arapske zemlje jer oni su drugi svet ,zasto sebe i porodicu stavljati u rizik kad imamo bar kolko tolko civilizovanije zemlje gde možete letovati bez rizika da vam otmu dete i napastvuju ženu ili devojku.Slučaja ima previše.Trebe pritisnuti agencije pravno i priupitati šta oni to nude.";
         return geminiService.callGeminiApi(defaultPrompt);
     }
 

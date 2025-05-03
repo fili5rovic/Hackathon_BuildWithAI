@@ -1,1 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
+/* Simple styling for the highlighted text */
+.my-custom-highlight {
+  background-color: yellow !important; /* Use !important to increase chance of overriding site styles */
+  color: black !important; /* Ensure text is readable */
+  padding: 0.1em; /* Optional: Add slight padding */
+  border-radius: 3px; /* Optional: Slightly rounded corners */
+  /* Reset potential browser default mark styling */
+  font-weight: inherit;
+}

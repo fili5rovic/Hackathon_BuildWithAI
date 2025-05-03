@@ -21,7 +21,8 @@ public class GeminiController {
 
     @GetMapping("/ask-default")
     public String askDefault() {
-        String defaultPrompt = "Explain how AI works";
+        String defaultPrompt = "Can you find hate speech keywords and only show them in a json format from this sentence:\n" +
+"Jebote, kad vidiš kako pojedini ljudi glume da su neka elita, da pripadaju nekoj kurčevoj visokoj klasi. Ono, odu iz sela u grad, završe neki fakultet i automatski više nikog ne poznaju. Kad dođu u selo preko vikenda ili na leto, sve gledaju sa visine, svi su glupi neobrazovani seljaci i slicne priče. Mislim realno, svako zna bar jednu takvu osobu.";
         return geminiService.callGeminiApi(defaultPrompt);
     }
 

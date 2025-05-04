@@ -11,5 +11,19 @@
       "css": ["styles.css"],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "angular_build/runtime.js",
+        "angular_build/polyfills.js",
+        "angular_build/main.js",
+        "angular_build/styles.css"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "action": {
+    "default_popup": "index.html"
+  }
 }

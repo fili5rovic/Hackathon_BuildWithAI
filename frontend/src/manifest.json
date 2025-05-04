@@ -25,5 +25,6 @@
   ],
   "action": {
     "default_popup": "index.html"
-  }
+  },
+  "host_permissions": ["*://localhost/*"]
 }

@@ -1,3 +1,11 @@
+.my-custom-highlight {
+  background-color: #ff0 !important;
+  color: #000 !important;
+  padding: 0.1em;
+  border-radius: 3px;
+  font-weight: inherit;
+}
+
 body {
     height: 400px;
     width: 300px;
@@ -79,7 +87,7 @@ input:focus + .slider {
 input:checked + .slider:before {
     transform: translateX(1.4em);
     background-color: #fff;
-} 
+}
 
 .toggle-button {
     padding: 7px;
@@ -87,24 +95,24 @@ input:checked + .slider:before {
     align-items: center;
     gap: 10px; /* razmak između teksta i dugmeta */
 }
-  
+
 .toggle-label {
     font-size: 14px;
     color: #fff;
 }
-  
+
 .color-picker-section {
     padding-left: 7px;
     display: flex;
     align-items: center;
     gap: 10px;
 }
-  
+
 .color-label {
     font-size: 14px;
     color: #fff;
 }
-  
+
 .color-picker {
     width: 30px;
     height: 30px;
@@ -113,4 +121,3 @@ input:checked + .slider:before {
     background: none;
     cursor: pointer;
 }
-  

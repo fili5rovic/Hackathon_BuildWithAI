@@ -2,12 +2,7 @@ package hackathon.controller;
 
 import hackathon.gemini.GeminiService;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +10,7 @@ import java.nio.file.Files;
 
 @RestController
 @RequestMapping("/gemini")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 public class GeminiController {
 
     private final GeminiService geminiService;
@@ -36,7 +32,7 @@ public class GeminiController {
 
     @PostMapping("/ask-body")
     public String askWithBody(@RequestBody PromptRequest promptRequest) {
-        return geminiService.callGeminiApi(promptRequest.getPrompt());
+        return geminiService.callGeminiApi(geminiService.getPrePrompt() + promptRequest.getPrompt());
     }
 
     public static class PromptRequest {

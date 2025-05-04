@@ -1,0 +1,2 @@
+// Usage:
+console.log(getAllVisibleText());

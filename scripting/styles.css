@@ -1,0 +1,7 @@
+.my-custom-highlight {
+  background-color: #ff0 !important;
+  color: #000 !important;
+  padding: 0.1em;
+  border-radius: 3px;
+  font-weight: inherit;
+}

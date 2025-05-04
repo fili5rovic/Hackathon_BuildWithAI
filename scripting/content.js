@@ -1,64 +1,47 @@
 /**
  * Content script that sends page text to a backend, receives a list
  * of strings to highlight, and highlights them on the page.
- * Handles backend responses that might be strings containing JSON,
- * potentially wrapped in markdown code fences.
+ * Includes MutationObserver to handle Single-Page Applications (SPAs).
  */
 
 (function () {
   // --- Configuration ---
-  const backendUrl = "http://localhost:8080/gemini/ask-body"; // Your backend endpoint
-  const highlightClass = "my-custom-highlight"; // CSS class for highlighting
+  const backendUrl = "http://localhost:8080/gemini/ask-body";
+  const highlightClass = "my-custom-highlight";
+  const debounceWait = 1500; // Wait 1.5 seconds after DOM changes before re-highlighting
   // -------------------
 
-  // ... (escapeRegExp, highlightWords, getAllVisibleText functions remain the same) ...
+  // --- Core Functions (escapeRegExp, highlightWords, getAllVisibleText, extractAndParseJson) ---
+  // (Keep these functions exactly as they were in the previous version)
 
-   /**
+  /**
    * Escapes regex special characters in a string.
    * @param {string} str - The string to escape.
    * @returns {string} - The escaped string.
    */
-   function escapeRegExp(str) {
-    // Escape characters carefully, especially those that might appear in various languages
+  function escapeRegExp(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   /**
    * Traverses the DOM starting from rootNode and highlights text nodes containing any of the words.
-   * Uses TreeWalker for efficient and safe DOM traversal.
-   * Handles potentially overlapping matches and complex node structures.
    * @param {Node} rootNode - The starting node (e.g., document.body).
    * @param {string[]} words - Array of exact strings to highlight.
    * @param {string} cssClass - The CSS class to apply to the highlight.
    */
   function highlightWords(rootNode, words, cssClass) {
-    if (!words || !words.length) {
-        // console.log("[Highlighter] No words provided for highlighting.");
-        return;
-    }
-
+    // ... (function content remains the same) ...
+    if (!words || !words.length) return;
     const validWords = words.filter(word => word && word.trim().length > 0);
-    if (!validWords.length) {
-        // console.log("[Highlighter] No valid words provided for highlighting after filtering.");
-        return;
-    }
-
+    if (!validWords.length) return;
     const pattern = validWords.map(escapeRegExp).join("|");
-    // Using 'g' for global match, 'i' for case-insensitive.
     const regex = new RegExp(`(${pattern})`, "gi");
-    // console.log("[Highlighter] Regex:", regex); // Uncomment for debugging
-
     const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, {
       acceptNode: function (node) {
         const parentElement = node.parentElement;
         if (!parentElement) return NodeFilter.FILTER_REJECT;
         const parentTag = parentElement.tagName.toUpperCase();
-        if (
-          parentTag === "SCRIPT" ||
-          parentTag === "STYLE" ||
-          parentElement.closest(`.${cssClass}`) ||
-          parentElement.closest('[data-no-highlight]')
-        ) {
+        if ( parentTag === "SCRIPT" || parentTag === "STYLE" || parentElement.closest(`.${cssClass}`) || parentElement.closest('[data-no-highlight]') ) {
           return NodeFilter.FILTER_REJECT;
         }
         regex.lastIndex = 0;
@@ -69,36 +52,23 @@
         return NodeFilter.FILTER_REJECT;
       },
     });
-
     let node;
     const nodesToProcess = [];
     while ((node = walker.nextNode())) {
-        if (document.body.contains(node)) {
-            nodesToProcess.push(node);
-        }
+        if (document.body.contains(node)) { nodesToProcess.push(node); }
     }
-
-    // console.log(`[Highlighter] Found ${nodesToProcess.length} text nodes potentially containing text to highlight.`);
-
     nodesToProcess.forEach((textNode) => {
       if (!textNode.parentNode) return;
-
       const text = textNode.nodeValue;
       const fragment = document.createDocumentFragment();
       let lastIndex = 0;
       let matchFound = false;
-
       text.replace(regex, (match, p1, offset) => {
         const lowerCaseMatch = match.toLowerCase();
         const shouldHighlight = validWords.some(validWord => validWord.toLowerCase() === lowerCaseMatch);
-
         if (shouldHighlight) {
             matchFound = true;
-            if (offset > lastIndex) {
-              fragment.appendChild(
-                document.createTextNode(text.substring(lastIndex, offset))
-              );
-            }
+            if (offset > lastIndex) { fragment.appendChild( document.createTextNode(text.substring(lastIndex, offset)) ); }
             const mark = document.createElement("mark");
             mark.className = cssClass;
             mark.textContent = match;
@@ -107,77 +77,37 @@
         }
         return match;
       });
-
-      if (!matchFound) {
-          return;
-      }
-
-      if (lastIndex < text.length) {
-        fragment.appendChild(
-          document.createTextNode(text.substring(lastIndex))
-        );
-      }
-
+      if (!matchFound) { return; }
+      if (lastIndex < text.length) { fragment.appendChild( document.createTextNode(text.substring(lastIndex)) ); }
       if (textNode.parentNode) {
-        try {
-          textNode.parentNode.replaceChild(fragment, textNode);
-        } catch (e) {
-          console.error("[Highlighter] Error replacing text node:", e, textNode);
-        }
-      } else {
-        // console.warn("[Highlighter] Text node parent disappeared before replacement:", textNode); // Uncomment for debugging
+        try { textNode.parentNode.replaceChild(fragment, textNode); }
+        catch (e) { console.error("[Highlighter] Error replacing text node:", e, textNode); }
       }
     });
-
     regex.lastIndex = 0;
   }
 
   /**
-   * Extracts and returns visible text content from the page, suitable for sending to backend.
+   * Extracts and returns visible text content from the page.
    * @returns {string} - Concatenated visible text.
    */
   function getAllVisibleText() {
+    // ... (function content remains the same) ...
     const ignoredTags = ["SCRIPT", "STYLE", "NOSCRIPT", "HEAD", "META", "LINK", "TITLE", "BUTTON", "INPUT", "TEXTAREA", "SELECT", "OPTION"];
     let textSegments = [];
-
-    function isElementVisible(el) {
-        if (!el) return false;
-        const style = window.getComputedStyle(el);
-        return style.display !== 'none' && style.visibility !== 'hidden' && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
-    }
-
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-      {
+    function isElementVisible(el) { if (!el) return false; const style = window.getComputedStyle(el); return style.display !== 'none' && style.visibility !== 'hidden' && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0); }
+    const walker = document.createTreeWalker( document.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
         acceptNode: function (node) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            const element = node;
-            const tagName = element.tagName.toUpperCase();
-            if (ignoredTags.includes(tagName) || !isElementVisible(element) || element.closest('[data-no-extract]')) {
-              return NodeFilter.FILTER_REJECT;
-            }
-            return NodeFilter.FILTER_ACCEPT;
-          } else if (node.nodeType === Node.TEXT_NODE) {
-            const parentElement = node.parentElement;
-            if (parentElement && !ignoredTags.includes(parentElement.tagName.toUpperCase()) && node.nodeValue.trim().length > 0 && isElementVisible(parentElement)) {
-              return NodeFilter.FILTER_ACCEPT;
-            }
-          }
+          if (node.nodeType === Node.ELEMENT_NODE) { const element = node; const tagName = element.tagName.toUpperCase(); if (ignoredTags.includes(tagName) || !isElementVisible(element) || element.closest('[data-no-extract]')) { return NodeFilter.FILTER_REJECT; } return NodeFilter.FILTER_ACCEPT; }
+          else if (node.nodeType === Node.TEXT_NODE) { const parentElement = node.parentElement; if (parentElement && !ignoredTags.includes(parentElement.tagName.toUpperCase()) && node.nodeValue.trim().length > 0 && isElementVisible(parentElement)) { return NodeFilter.FILTER_ACCEPT; } }
           return NodeFilter.FILTER_REJECT;
         },
       }
     );
-
     let currentNode;
-    while (currentNode = walker.nextNode()) {
-      if (currentNode.nodeType === Node.TEXT_NODE) {
-        textSegments.push(currentNode.nodeValue.trim());
-      }
-    }
+    while (currentNode = walker.nextNode()) { if (currentNode.nodeType === Node.TEXT_NODE) { textSegments.push(currentNode.nodeValue.trim()); } }
     return textSegments.join(' ').replace(/\s+/g, ' ').trim();
   }
-
 
   /**
    * Extracts JSON from a string, potentially removing markdown fences.
@@ -185,60 +115,44 @@
    * @returns {object | null} - The parsed JSON object or null if extraction/parsing fails.
    */
   function extractAndParseJson(rawText) {
-      if (!rawText || typeof rawText !== 'string') {
-          console.error("[Highlighter] Invalid raw text received:", rawText);
-          return null;
-      }
-
-      try {
-          // Attempt 1: Try direct parsing (if it's already valid JSON)
-          try {
-              return JSON.parse(rawText);
-          } catch (e) {
-              // Ignore direct parsing error and proceed to extraction
-          }
-
-          // Attempt 2: Remove potential markdown fences and then parse
-          let jsonString = rawText.trim();
-          // Remove ```json prefix (allowing for optional space)
-          if (jsonString.startsWith('```json')) {
-              jsonString = jsonString.substring(7).trimStart();
-          } else if (jsonString.startsWith('```')) {
-              // Handle case where language is not specified, e.g., just ```
-              jsonString = jsonString.substring(3).trimStart();
-          }
-
-          // Remove ``` suffix
-          if (jsonString.endsWith('```')) {
-              jsonString = jsonString.substring(0, jsonString.length - 3).trimEnd();
-          }
-
-          // Final check: Ensure it looks like JSON (starts with [ or {)
-          if (jsonString.startsWith('[') || jsonString.startsWith('{')) {
-            console.log("[Highlighter] Attempting to parse extracted JSON string:", jsonString);
-            return JSON.parse(jsonString);
-          } else {
-            console.error("[Highlighter] Extracted string doesn't look like JSON:", jsonString);
-            return null;
-          }
-
-      } catch (error) {
-          console.error("[Highlighter] Failed to parse JSON from backend response:", error);
-          console.error("[Highlighter] Original raw text was:", rawText); // Log the original text for debugging
-          return null;
-      }
+    // ... (function content remains the same) ...
+    if (!rawText || typeof rawText !== 'string') { console.error("[Highlighter] Invalid raw text received:", rawText); return null; }
+    try {
+        try { return JSON.parse(rawText); } catch (e) { /* Ignore */ }
+        let jsonString = rawText.trim();
+        if (jsonString.startsWith('```json')) { jsonString = jsonString.substring(7).trimStart(); }
+        else if (jsonString.startsWith('```')) { jsonString = jsonString.substring(3).trimStart(); }
+        if (jsonString.endsWith('```')) { jsonString = jsonString.substring(0, jsonString.length - 3).trimEnd(); }
+        if (jsonString.startsWith('[') || jsonString.startsWith('{')) { /* console.log("[Highlighter] Attempting to parse extracted JSON string:", jsonString); */ return JSON.parse(jsonString); }
+        else { console.error("[Highlighter] Extracted string doesn't look like JSON:", jsonString); return null; }
+    } catch (error) { console.error("[Highlighter] Failed to parse JSON from backend response:", error); console.error("[Highlighter] Original raw text was:", rawText); return null; }
   }
+  // ------------------------------------------------------------------------------------
+
 
   /**
    * Fetches hate speech data from the backend based on page text and initiates highlighting.
    */
   async function fetchAndHighlight() {
-    // await new Promise(resolve => setTimeout(resolve, 500)); // Optional delay
+    console.log("[Highlighter] Running fetchAndHighlight..."); // Add log
 
     if (!document.body) {
       console.warn("[Highlighter] Document body not available yet.");
       return;
     }
+
+    // --- Optional: Simple cleanup of previous highlights ---
+    // This prevents highlights from accumulating if the observer triggers frequently
+    // More robust cleanup might be needed depending on SPA behavior
+    // document.querySelectorAll(`.${highlightClass}`).forEach(el => {
+    //    // Replace mark with its text content - might need more sophisticated logic
+    //    // if the original structure was complex.
+    //    if (el.parentNode) {
+    //       el.outerHTML = el.innerHTML;
+    //    }
+    // });
+    // -----------------------------------------------------
+
 
     try {
       const pageText = getAllVisibleText();
@@ -261,23 +175,15 @@
         throw new Error(`Backend request failed: ${response.status} ${response.statusText}. Body: ${errorBody}`);
       }
 
-      // --- MODIFICATION START ---
-      // Get the raw text response instead of trying to parse JSON directly
       const rawResponseText = await response.text();
-      console.log("[Highlighter] Received raw response from backend:", rawResponseText);
+      // console.log("[Highlighter] Received raw response from backend:", rawResponseText); // Keep for debugging if needed
 
-      // Extract and parse the JSON from the raw text
       const data = extractAndParseJson(rawResponseText);
 
-      // Check if parsing was successful
       if (data === null) {
-          // Error already logged in extractAndParseJson
           return; // Stop execution if JSON is invalid
       }
-      // --- MODIFICATION END ---
 
-
-      // --- Continue with the parsed data ---
       if (!Array.isArray(data)) {
           console.error("[Highlighter] Parsed data is not an array:", data);
           return;
@@ -288,25 +194,26 @@
         .filter(text => typeof text === 'string' && text.trim().length > 0);
 
       if (wordsToHighlight.length > 0) {
+        console.log("[Highlighter] Applying highlights for:", wordsToHighlight); // Add log
         highlightWords(document.body, wordsToHighlight, highlightClass);
       } else {
-        // console.log("[Highlighter] No strings to highlight based on parsed backend response.");
+         console.log("[Highlighter] No strings to highlight based on parsed backend response."); // Add log
       }
 
     } catch (error) {
       console.error("[Highlighter] Error fetching or processing highlight data:", error);
-      if (error.message?.includes("Failed to fetch") && error.name === "TypeError") {
-          console.warn("[Highlighter] This 'Failed to fetch' error might be CORS-related. Ensure backend at " + backendUrl + " has correct CORS headers.");
-      }
+      // Optional: Add more specific error logging if needed
     }
   }
 
-  // --- Execution ---
+  // --- Debounce Function ---
   function debounce(func, wait) {
       let timeout;
       return function executedFunction(...args) {
+          console.log(`[Highlighter] Debounce triggered. Waiting ${wait}ms...`); // Add log
           const later = () => {
               clearTimeout(timeout);
+              console.log("[Highlighter] Debounce timeout finished. Executing function."); // Add log
               func(...args);
           };
           clearTimeout(timeout);
@@ -314,12 +221,55 @@
       };
   }
 
-  const debouncedFetchAndHighlight = debounce(fetchAndHighlight, 1000);
+  // --- Execution Logic ---
 
+  // 1. Create debounced version of the main function
+  const debouncedFetchAndHighlight = debounce(fetchAndHighlight, debounceWait);
+
+  // 2. Function to initialize everything (initial run + observer)
+  function initializeHighlighter() {
+      console.log("[Highlighter] Initializing..."); // Add log
+      // Initial run
+      debouncedFetchAndHighlight();
+
+      // Setup MutationObserver
+      const observerTarget = document.body;
+      if (!observerTarget) {
+          console.error("[Highlighter] Cannot find document.body to observe.");
+          return;
+      }
+
+      const observerConfig = {
+          childList: true, // Watch for addition/removal of child nodes
+          subtree: true    // Watch the entire subtree under the target
+          // Optional: attributes: false, characterData: false (usually not needed for SPA navigation)
+      };
+
+      const observer = new MutationObserver((mutationsList, obs) => {
+          // We don't need to inspect mutationsList details usually,
+          // just know that *something* changed.
+          console.log("[Highlighter] MutationObserver detected DOM change."); // Add log
+          // Call the debounced function whenever a mutation occurs
+          debouncedFetchAndHighlight();
+      });
+
+      // Start observing
+      observer.observe(observerTarget, observerConfig);
+      console.log("[Highlighter] MutationObserver started observing document.body."); // Add log
+
+      // Optional: Disconnect observer when the window unloads (good practice)
+      // window.addEventListener('unload', () => {
+      //    observer.disconnect();
+      //    console.log("[Highlighter] MutationObserver disconnected.");
+      // });
+  }
+
+  // 3. Run initialization when the DOM is ready
   if (document.readyState === "loading") {
-    window.addEventListener("DOMContentLoaded", debouncedFetchAndHighlight);
+    window.addEventListener("DOMContentLoaded", initializeHighlighter);
   } else {
-    debouncedFetchAndHighlight();
+    // DOM is already ready
+    initializeHighlighter();
   }
 
 })();
